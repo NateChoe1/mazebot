@@ -5,6 +5,7 @@ It's a discord bot which is also a maze game. Here's the controls. You can also 
 !quit: quits the game
 !display: displays the maze
 !getInviteLink: gets the link to invite mazebot.
+!source: returns the github link
 
 move controls:
 !w/a/s/d

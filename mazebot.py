@@ -56,6 +56,9 @@ class MyClient(discord.Client):
                 await message.channel.send("The game hasn't started yet.")
             elif (messageParts[1] == "getInviteLink"):
                 await message.channel.send("The invite link is https://discord.com/oauth2/authorize?client_id=752081210355744828&scope=bot")
+            elif (messageParts[1] == "source") {
+                await message.channel.send("The source code can be found at https://github.com/NateChoe1/mazebot")
+            }
             else:
                 await message.channel.send("You pinged me but didn't type a command. Or maybe you put the ping after the message, or something, but you didn't format it right.")
     async def on_raw_reaction_remove(self, payload):

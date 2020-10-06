@@ -41,17 +41,14 @@ class MyClient(discord.Client):
             elif (messageParts[1] == "quit"):
                 await message.channel.send("You haven't started a game yet.")
             elif(message.author.id in players and (messageParts[1] == "w" or messageParts[1] == "a" or messageParts[1] == "s" or messageParts[1] == "d")):
-                if (messageParts[1] == "a"):
-                    await players[message.author.id].move("left")
                 if (messageParts[1] == "w"):
                     await players[message.author.id].move("up")
-                if (messageParts[1] == "d"):
-                    await players[message.author.id].move("right")
+                if (messageParts[1] == "a"):
+                    await players[message.author.id].move("left")
                 if (messageParts[1] == "s"):
                     await players[message.author.id].move("down")
-                if (players[message.author.id].x == len(players[message.author.id].maze)-2 and players[message.author.id].y == len(players[message.author.id].maze[0])-2):
-                    await message.channel.send("You win!")
-                    del players[message.author.id]
+                if (messageParts[1] == "d"):
+                    await players[message.author.id].move("right")
             elif (messageParts[1] == "w" or messageParts[1] == "a" or messageParts[1] == "s" or messageParts[1] == "d"):
                 await message.channel.send("The game hasn't started yet.")
             elif (messageParts[1] == "getInviteLink"):
@@ -68,18 +65,13 @@ class MyClient(discord.Client):
         if (user_id in players):
             direction = ""
             if (emoji == "⬆"):
-                direction = "up"
-            if (emoji == "➡"):
-                direction = "right"
-            if (emoji == "⬇"):
-                direction = "down"
+                await players[user_id].move("up")
             if (emoji == "⬅"):
-                direction = "left"
-            await players[user_id].move(direction)
-
-            if (user_id in players and players[user_id].x == len(players[user_id].maze)-2 and players[user_id].y == len(players[user_id].maze[0])-2):
-                await players[user_id].messageChannel.send("You win!")
-                del players[user_id]
+                await players[user_id].move("left")
+            if (emoji == "⬇"):
+                await players[user_id].move("down")
+            if (emoji == "➡"):
+                await players[user_id].move("right")
 
 class Player():
     def __init__(self, width, height, channel):
@@ -88,11 +80,11 @@ class Player():
         self.y = 1
         self.beenDisplayed = False
         self.messageChannel = channel
-        for x in range(0, width):
-            column = []
-            for y in range(0, height):
+        for y in range(0, height):
+            row = []
+            for x in range(0, width):
                 column.append(False)
-            self.maze.append(column)
+            self.maze.append(row)
 
         self.maze[1][1] = True
         stack = [[1, 1]]
@@ -102,7 +94,7 @@ class Player():
             availableDirections = []
             for direction in directions:
                 newPoint = [point[0]+direction[0]*2, point[1]+direction[1]*2]
-                if (newPoint[0] < 0 or newPoint[0] >= width or newPoint[1] < 0 or newPoint[1] >= height or self.maze[newPoint[0]][newPoint[1]]):
+                if (newPoint[0] < 0 or newPoint[0] >= height or newPoint[1] < 0 or newPoint[1] >= width or self.maze[newPoint[0]][newPoint[1]]):
                     continue
                 availableDirections.append(direction)
             if (len(availableDirections) == 0):
@@ -116,14 +108,14 @@ class Player():
     async def displayMaze(self):
         if (not self.beenDisplayed):
             self.mazeMessages = []
-        for x in range(0, len(self.maze)):
+        for y in range(0, len(self.maze)):
             row = ""
-            for y in range(0, len(self.maze[x])):
-                if (x == self.x and y == self.y):
+            for x in range(0, len(self.maze[y])):
+                if (y == self.y and x == self.x):
                     row = row + "\U0001F600"
-                elif (x == len(self.maze)-2 and y == len(self.maze[x])-2):
+                elif (y == len(self.maze)-2 and x == len(self.maze[y])-2):
                     row = row + "✅"
-                elif (self.maze[x][y]):
+                elif (self.maze[y][x]):
                     row = row + "⬛"
                 else:
                     row = row + "❌"
@@ -140,20 +132,20 @@ class Player():
 
     async def refreshLine(self, x):
         row = ""
-        for y in range(0, len(self.maze[x])):
-            if (x == self.x and y == self.y):
+        for y in range(0, len(self.maze)):
+            if (y == self.y and x == self.x):
                 row = row + "\U0001F600"
-            elif (x == len(self.maze)-2 and y == len(self.maze[x])-2):
+            elif (y == len(self.maze)-2 and x == len(self.maze[y])-2):
                 row = row + "✅"
-            elif (self.maze[x][y]):
+            elif (self.maze[y][x]):
                 row = row + "⬛"
             else:
                 row = row + "❌"
-        await self.mazeMessages[x].edit(content=row)
+        await self.mazeMessages[y].edit(content=row)
 
     async def move(self, direction):
         changes = [0, 0]
-        oldX = self.x
+        oldY = self.y
         if (direction == "left"):
             changes = [0, -1]
         if (direction == "up"):
@@ -162,12 +154,15 @@ class Player():
             changes = [0, 1]
         if (direction == "down"):
             changes = [1, 0]
-        if (self.maze[self.x+changes[0]][self.y+changes[1]]):
+        if (self.maze[self.y+changes[0]][self.x+changes[1]]):
             self.x += changes[0]
             self.y += changes[1]
-        await self.refreshLine(oldX)
-        await self.refreshLine(self.x)
+        await self.refreshLine(oldY)
+        await self.refreshLine(self.Y)
 
+        if (self.y == len(self.maze)-2 and self.x == len(self.maze[0])-2):
+            await message.channel.send("You win!")
+            del players[message.author.id]
 client = MyClient()
 secret_file = open("secrets.txt", "r")
 client.run(secret_file.read())

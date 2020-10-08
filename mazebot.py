@@ -29,7 +29,7 @@ class MyClient(discord.Client):
                         height = int(messageParts[3])
                 else:
                     await message.channel.send("Not enough inputs. Defaulting to 11x11.")
-                players[message.author.id] = Player(width, height, message.channel)
+                players[message.author.id] = Player(width, height, message.channel, message.author.id)
                 await players[message.author.id].displayMaze()
             elif (messageParts[1] == "start"):
                 await message.channel.send("You're already playing a game.")
@@ -74,16 +74,17 @@ class MyClient(discord.Client):
                 await players[user_id].move("right")
 
 class Player():
-    def __init__(self, width, height, channel):
+    def __init__(self, width, height, channel, user_id):
         self.maze = []
         self.x = 1
         self.y = 1
         self.beenDisplayed = False
         self.messageChannel = channel
+        self.user_id = user_id
         for y in range(0, height):
             row = []
             for x in range(0, width):
-                column.append(False)
+                row.append(False)
             self.maze.append(row)
 
         self.maze[1][1] = True
@@ -130,9 +131,9 @@ class Player():
             await self.mazeMessages[-1].add_reaction("⬅")
         self.beenDisplayed = True
 
-    async def refreshLine(self, x):
+    async def refreshLine(self, y):
         row = ""
-        for y in range(0, len(self.maze)):
+        for x in range(0, len(self.maze[y])):
             if (y == self.y and x == self.x):
                 row = row + "\U0001F600"
             elif (y == len(self.maze)-2 and x == len(self.maze[y])-2):
@@ -155,14 +156,14 @@ class Player():
         if (direction == "down"):
             changes = [1, 0]
         if (self.maze[self.y+changes[0]][self.x+changes[1]]):
-            self.x += changes[0]
-            self.y += changes[1]
+            self.y += changes[0]
+            self.x += changes[1]
         await self.refreshLine(oldY)
-        await self.refreshLine(self.Y)
+        await self.refreshLine(self.y)
 
         if (self.y == len(self.maze)-2 and self.x == len(self.maze[0])-2):
-            await message.channel.send("You win!")
-            del players[message.author.id]
+            await self.messageChannel.send("You win!")
+            del players[self.user_id]
 client = MyClient()
 secret_file = open("secrets.txt", "r")
 client.run(secret_file.read())
